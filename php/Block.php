@@ -131,21 +131,16 @@ class Block {
 							'include_children' => false,
 						],
 					],
-					'meta_value'     => 'Accepted',
 				]
 			);
 
-			// Record the ID of the post we're on so we can exclude it from the output.
+			// Record the ID of the post we're on, so we can exclude it from the output.
 			$host_post_id = get_the_ID();
 
 			// Holding array for our post titles.
 			$post_titles = [];
 
 			if ( $query->have_posts() ) :
-				?>
-				<h2><?php _e( 'Any 5 posts with the tag of foo and the category of baz', 'site-counts' ); ?></h2>
-				<ul>
-				<?php
 				while ( $query->have_posts() ) :
 
 					$query->the_post();
@@ -155,17 +150,36 @@ class Block {
 						continue;
 					}
 
-					// Store the post title for later.
-					$post_titles[] = $post->post_title;
+					// Get all the post meta, so we can search it for any value of "Accepted", and skip any post with a
+					// matching meta value.
+					$post_meta = get_post_meta( get_the_ID() );
+					foreach ( $post_meta as $key => $value ) {
+						if (
+							( is_array( $value ) && array_search( 'Accepted', $value ) ) ||
+							'Accepted' == $value
+						) {
+							continue 2; // Skip this post in the loop.
+						}
+					}
 
-					foreach ( array_slice( $post_titles, 0, 5 ) as $title ) :
+					// Store the post title for later.
+					$post_titles[] = get_the_title();
+
+				endwhile;
+			endif;
+
+			// Print out the 5 post titles we actually need.
+			?>
+				<h2><?php _e( 'Any 5 posts with the tag of foo and the category of baz', 'site-counts' ); ?></h2>
+				<ul>
+					<?php
+					foreach ( array_slice( $post_titles, 0, 5 ) as $title ) {
 						?>
 						<li><?php esc_html( $title ); ?></li>
 						<?php
-				endwhile;
-			endif;
-			?>
-			</ul>
+					}
+					?>
+				</ul>
 		</div>
 		<?php
 
