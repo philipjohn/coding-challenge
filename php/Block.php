@@ -104,9 +104,9 @@ class Block {
 			<?php
 			$query = new WP_Query(
 				[
-					'post_type'     => [ 'post', 'page' ],
-					'post_status'   => 'any',
-					'date_query'    => [
+					'post_type'    => [ 'post', 'page' ],
+					'post_status'  => 'any',
+					'date_query'   => [
 						[
 							'hour'    => 9,
 							'compare' => '>=',
@@ -116,10 +116,22 @@ class Block {
 							'compare' => '<=',
 						],
 					],
-					'tag'           => 'foo',
-					'category_name' => 'baz',
-					'post__not_in'  => [ get_the_ID() ],
-					'meta_value'    => 'Accepted',
+					'tax_query'    => [
+						'relation' => 'AND',
+						[
+							'taxonomy' => 'post_tag',
+							'field'    => 'slug',
+							'terms'    => [ 'foo' ],
+						],
+						[
+							'taxonomy'         => 'category',
+							'field'            => 'name',
+							'terms'            => [ 'baz' ],
+							'include_children' => false,
+						],
+					],
+					'post__not_in' => [ get_the_ID() ],
+					'meta_value'   => 'Accepted',
 				]
 			);
 
