@@ -155,8 +155,8 @@ class Block {
 					$post_meta = get_post_meta( get_the_ID() );
 					foreach ( $post_meta as $key => $value ) {
 						if (
-							( is_array( $value ) && array_search( 'Accepted', $value ) ) ||
-							'Accepted' == $value
+							( is_array( $value ) && array_search( 'Accepted', $value, true ) ) ||
+							'Accepted' === $value
 						) {
 							continue 2; // Skip this post in the loop.
 						}
