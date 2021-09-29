@@ -81,18 +81,25 @@ class Block {
 				<?php
 				echo sprintf(
 					/* translators: first replacement is number of posts, second replacement is the post type name (e.g. "post" ) */
-					__( 'There are %d %s.', 'site-counts' ),
+					__( 'There are %1$d %2$s.', 'site-counts' ),
 					intval( $post_count ),
 					esc_html( $post_type_object->labels->name )
 				);
 				?>
 				</li>
-			<?php endforeach; ?>
+				<?php
+				endforeach;
+			?>
 			</ul>
-			<p><?php echo sprintf(
+			<p>
+				<?php
+				echo sprintf(
+					/* translators: replacement will be a numeric post ID number */
 					__( 'The current post ID is %d.', 'site-counts' ),
 					intval( $_GET['post_id'] )
-			); ?></p>
+				);
+				?>
+			</p>
 
 			<?php
 			$query = new WP_Query(
@@ -124,7 +131,7 @@ class Block {
 
 				foreach ( array_slice( $query->posts, 0, 5 ) as $post ) :
 					?>
-					<li><?php esc_html_e( $post->post_title ); ?></li>
+					<li><?php esc_html( $post->post_title ); ?></li>
 					<?php
 				endforeach;
 			endif;
