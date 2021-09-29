@@ -87,6 +87,7 @@ class Block {
 				<li>
 				<?php
 				echo sprintf(
+					/* translators: first replacement is number of posts, second replacement is the post type name (e.g. "post" ) */
 					__( 'There are %d %s.', 'site-counts' ),
 					intval( $post_count ),
 					esc_html( $post_type_object->labels->name )
