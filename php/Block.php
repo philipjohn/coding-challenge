@@ -104,9 +104,10 @@ class Block {
 			<?php
 			$query = new WP_Query(
 				[
-					'post_type'    => [ 'post', 'page' ],
-					'post_status'  => 'any',
-					'date_query'   => [
+					'post_type'      => [ 'post', 'page' ],
+					'post_status'    => 'any',
+					'posts_per_page' => 15, // We only need 5, but we need to exclude some - see the loop below.
+					'date_query'     => [
 						[
 							'hour'    => 9,
 							'compare' => '>=',
@@ -116,7 +117,7 @@ class Block {
 							'compare' => '<=',
 						],
 					],
-					'tax_query'    => [
+					'tax_query'      => [
 						'relation' => 'AND',
 						[
 							'taxonomy' => 'post_tag',
@@ -130,22 +131,38 @@ class Block {
 							'include_children' => false,
 						],
 					],
-					'post__not_in' => [ get_the_ID() ],
-					'meta_value'   => 'Accepted',
+					'meta_value'     => 'Accepted',
 				]
 			);
 
-			if ( $query->found_posts ) :
+			// Record the ID of the post we're on so we can exclude it from the output.
+			$host_post_id = get_the_ID();
+
+			// Holding array for our post titles.
+			$post_titles = [];
+
+			if ( $query->have_posts() ) :
 				?>
 				<h2><?php _e( 'Any 5 posts with the tag of foo and the category of baz', 'site-counts' ); ?></h2>
 				<ul>
 				<?php
+				while ( $query->have_posts() ) :
 
-				foreach ( array_slice( $query->posts, 0, 5 ) as $post ) :
-					?>
-					<li><?php esc_html( $post->post_title ); ?></li>
-					<?php
-				endforeach;
+					$query->the_post();
+
+					// Skip this post if it's the same as the current post.
+					if ( get_the_ID() === $host_post_id ) {
+						continue;
+					}
+
+					// Store the post title for later.
+					$post_titles[] = $post->post_title;
+
+					foreach ( array_slice( $post_titles, 0, 5 ) as $title ) :
+						?>
+						<li><?php esc_html( $title ); ?></li>
+						<?php
+				endwhile;
 			endif;
 			?>
 			</ul>
