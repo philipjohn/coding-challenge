@@ -87,7 +87,7 @@ class Block {
 				<li>
 				<?php
 				echo sprintf(
-					'There are %d %s.',
+					__( 'There are %d %s.', 'site-counts' ),
 					intval( $post_count ),
 					esc_html( $post_type_object->labels->name )
 				);
@@ -96,7 +96,7 @@ class Block {
 			<?php endforeach; ?>
 			</ul>
 			<p><?php echo sprintf(
-					'The current post ID is %d.',
+					__( 'The current post ID is %d.', 'site-counts' ),
 					intval( $_GET['post_id'] )
 			); ?></p>
 
@@ -124,7 +124,7 @@ class Block {
 
 			if ( $query->found_posts ) :
 				?>
-				<h2>Any 5 posts with the tag of foo and the category of baz</h2>
+				<h2><?php _e( 'Any 5 posts with the tag of foo and the category of baz', 'site-counts' ); ?></h2>
 				<ul>
 				<?php
 
