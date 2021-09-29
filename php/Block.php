@@ -65,6 +65,14 @@ class Block {
 	public function render_callback( $attributes, $content, $block ) {
 		$post_types = get_post_types( [ 'public' => true ] );
 		$class_name = $attributes['className'];
+
+		// Construct a cache key from the arguments and then check if a cache exists with that key. If it does, we can
+		// return cached output and avoid some querying which will be nice.
+		$cache_key = md5( json_encode( $post_types, $class_name ) );
+		if ( $output = wp_cache_get( $cache_key, 'site-counts' ) ) {
+			return $output;
+		}
+
 		ob_start();
 
 		?>
@@ -183,6 +191,10 @@ class Block {
 		</div>
 		<?php
 
-		return ob_get_clean();
+		// Get and cache the output so we can avoid unnecessary queries.
+		$output = ob_get_clean();
+		wp_cache_set( $cache_key, $output, 'site-counts', 5 * MINUTE_IN_SECONDS );
+
+		return $output;
 	}
 }
