@@ -63,67 +63,138 @@ class Block {
 	 * @return string The markup of the block.
 	 */
 	public function render_callback( $attributes, $content, $block ) {
-		$post_types = get_post_types(  [ 'public' => true ] );
+		$post_types = get_post_types( [ 'public' => true ] );
 		$class_name = $attributes['className'];
+
+		// Construct a cache key from the arguments and then check if a cache exists with that key. If it does, we can
+		// return cached output and avoid some querying which will be nice.
+		$cache_key = md5( json_encode( $post_types, $class_name ) );
+		if ( $output = wp_cache_get( $cache_key, 'site-counts' ) ) {
+			return $output;
+		}
+
 		ob_start();
 
 		?>
-        <div class="<?php echo $class_name; ?>">
-			<h2>Post Counts</h2>
+			<div class="<?php echo esc_attr( $class_name ); ?>">
+			<h2><?php esc_html_e( 'Post Counts', 'site-counts' ); ?></h2>
 			<ul>
 			<?php
 			foreach ( $post_types as $post_type_slug ) :
-                $post_type_object = get_post_type_object( $post_type_slug  );
-                $post_count = count(
-                    get_posts(
-						[
-							'post_type' => $post_type_slug,
-							'posts_per_page' => -1,
-						]
-					)
-                );
+				$post_type_object = get_post_type_object( $post_type_slug );
+				$post_count       = wp_count_posts( $post_type_slug )->publish;
 
 				?>
-				<li><?php echo 'There are ' . $post_count . ' ' .
-					  $post_type_object->labels->name . '.'; ?></li>
-			<?php endforeach;	?>
-			</ul><p><?php echo 'The current post ID is ' . $_GET['post_id'] . '.'; ?></p>
+				<li>
+				<?php
+				echo sprintf(
+					/* translators: first replacement is number of posts, second replacement is the post type name (e.g. "post" ) */
+					__( 'There are %1$d %2$s.', 'site-counts' ),
+					intval( $post_count ),
+					esc_html( $post_type_object->labels->name )
+				);
+				?>
+				</li>
+				<?php
+				endforeach;
+			?>
+			</ul>
+			<p>
+				<?php
+				echo sprintf(
+					/* translators: replacement will be a numeric post ID number */
+					__( 'The current post ID is %d.', 'site-counts' ),
+					intval( get_the_ID() )
+				);
+				?>
+			</p>
 
 			<?php
-			$query = new WP_Query(  array(
-				'post_type' => ['post', 'page'],
-				'post_status' => 'any',
-				'date_query' => array(
-					array(
-						'hour'      => 9,
-						'compare'   => '>=',
-					),
-					array(
-						'hour' => 17,
-						'compare'=> '<=',
-					),
-				),
-                'tag'  => 'foo',
-                'category_name'  => 'baz',
-				  'post__not_in' => [ get_the_ID() ],
-				  'meta_value' => 'Accepted',
-			));
+			$query = new WP_Query(
+				[
+					'post_type'      => [ 'post', 'page' ],
+					'post_status'    => 'any',
+					'posts_per_page' => 15, // We only need 5, but we need to exclude some - see the loop below.
+					'date_query'     => [
+						[
+							'hour'    => 9,
+							'compare' => '>=',
+						],
+						[
+							'hour'    => 17,
+							'compare' => '<=',
+						],
+					],
+					'tax_query'      => [
+						'relation' => 'AND',
+						[
+							'taxonomy' => 'post_tag',
+							'field'    => 'slug',
+							'terms'    => [ 'foo' ],
+						],
+						[
+							'taxonomy'         => 'category',
+							'field'            => 'name',
+							'terms'            => [ 'baz' ],
+							'include_children' => false,
+						],
+					],
+				]
+			);
 
-			if ( $query->found_posts ) :
-				?>
-				 <h2>Any 5 posts with the tag of foo and the category of baz</h2>
-                <ul>
-                <?php
+			// Record the ID of the post we're on, so we can exclude it from the output.
+			$host_post_id = get_the_ID();
 
-                 foreach ( array_slice( $query->posts, 0, 5 ) as $post ) :
-                    ?><li><?php echo $post->post_title ?></li><?php
-				endforeach;
+			// Holding array for our post titles.
+			$post_titles = [];
+
+			if ( $query->have_posts() ) :
+				while ( $query->have_posts() ) :
+
+					$query->the_post();
+
+					// Skip this post if it's the same as the current post.
+					if ( get_the_ID() === $host_post_id ) {
+						continue;
+					}
+
+					// Get all the post meta, so we can search it for any value of "Accepted", and skip any post with a
+					// matching meta value.
+					$post_meta = get_post_meta( get_the_ID() );
+					foreach ( $post_meta as $key => $value ) {
+						if (
+							( is_array( $value ) && array_search( 'Accepted', $value, true ) ) ||
+							'Accepted' === $value
+						) {
+							continue 2; // Skip this post in the loop.
+						}
+					}
+
+					// Store the post title for later.
+					$post_titles[] = get_the_title();
+
+				endwhile;
 			endif;
-		 	?>
-			</ul>
+
+			// Print out the 5 post titles we actually need.
+			?>
+				<h2><?php _e( 'Any 5 posts with the tag of foo and the category of baz', 'site-counts' ); ?></h2>
+				<ul>
+					<?php
+					foreach ( array_slice( $post_titles, 0, 5 ) as $title ) {
+						?>
+						<li><?php echo esc_html( $title ); ?></li>
+						<?php
+					}
+					?>
+				</ul>
 		</div>
 		<?php
 
-		return ob_get_clean();
+		// Get and cache the output so we can avoid unnecessary queries.
+		$output = ob_get_clean();
+		wp_cache_set( $cache_key, $output, 'site-counts', 5 * MINUTE_IN_SECONDS );
+
+		return $output;
 	}
 }
