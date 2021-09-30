@@ -104,7 +104,7 @@ class Block {
 				echo sprintf(
 					/* translators: replacement will be a numeric post ID number */
 					__( 'The current post ID is %d.', 'site-counts' ),
-					intval( $_GET['post_id'] )
+					intval( get_the_ID() )
 				);
 				?>
 			</p>
