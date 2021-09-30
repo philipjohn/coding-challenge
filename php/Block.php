@@ -183,7 +183,7 @@ class Block {
 					<?php
 					foreach ( array_slice( $post_titles, 0, 5 ) as $title ) {
 						?>
-						<li><?php esc_html( $title ); ?></li>
+						<li><?php echo esc_html( $title ); ?></li>
 						<?php
 					}
 					?>
