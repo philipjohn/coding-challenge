@@ -69,7 +69,7 @@ class Block {
 		// Construct a cache key from the arguments and then check if a cache exists with that key. If it does, we can
 		// return cached output and avoid some querying which will be nice.
 		$cache_key = md5( json_encode( $post_types, $class_name ) );
-		if ( $output = wp_cache_get( $cache_key, 'site-counts' ) ) {
+		if ( $output = false ) { //wp_cache_get( $cache_key, 'site-counts' ) ) {
 			return $output;
 		}
 
@@ -82,7 +82,7 @@ class Block {
 			<?php
 			foreach ( $post_types as $post_type_slug ) :
 				$post_type_object = get_post_type_object( $post_type_slug );
-				$post_count       = count( wp_count_posts( $post_type_slug ) );
+				$post_count       = wp_count_posts( $post_type_slug )->publish;
 
 				?>
 				<li>
